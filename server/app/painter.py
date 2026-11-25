@@ -2,7 +2,7 @@
 
 The writer only describes each picture (Draft.art) and the checker has already removed any description that
 would show an answer, so a picture can set the scene but never tell the child which button to press.
-Every call gets the same three reference pictures (Lumi's faces, the six friends, one finished scene), so a new
+Every call gets the same three reference pictures (Lumi's faces, the nine friends' model sheet, one finished scene), so a new
 world still has the same characters drawn the same way. Today's new friend is drawn first as a square portrait for
 the friend book, and that portrait goes along as a fourth reference for the cover and the ending.
 """
@@ -38,17 +38,23 @@ NOT_AI = (
 )
 STYLE = LOOK + (
     "Landscape picture, main subjects centered with margin on the left and right. "
-    "The first reference picture shows Lumi, a small round white robot guide; the second shows the six friends "
-    "(sprout robot, otter cook, penguin captain, grumpy lilac machine, fennec fox, rabbit engineer); keep anyone who "
-    "appears recognisable by those pictures' shapes and colours. The third reference picture shows the clay world; "
-    "where the references look more polished or more 3D than described here, follow the simpler handmade look. "
+    "The first reference picture shows Lumi, a small round white robot guide; the second is the model sheet of the "
+    "nine friends, read row by row: Bante (puppy, light brown and white, left ear folded, red scarf), Konyang (gray "
+    "tabby kitten, lime vest, magnifying glass), Ria (white bunny, yellow star hairpin, lilac cape with stars, crayon), "
+    "Tubugi (green turtle, dark green shell, small backpack), Pappi (tiny round long-tailed tit bird, short beak, orange "
+    "hard hat, pink ribbon), Potto (panda, blue overalls, bamboo basket), Io (orange fox, sky-blue scarf, winking), "
+    "Ssolrang (chubby tiger cub, brown explorer hat, small yellow flag) and Caspin (friendly blue baby shark with no "
+    "teeth, yellow backpack). Every friend wears the same yellow star badge on the chest. Anyone who appears keeps the "
+    "exact face, colours, outfit and prop from the model sheet; never mix two friends or invent new parts. The third "
+    "reference picture shows the clay world; where the references look more polished or more 3D than described here, "
+    "follow the simpler handmade look for the finish only, not for the characters' designs. "
 ) + NOT_AI
 # added when today's new friend has been drawn already, so the cover and the ending show the same friend
 WITH_FRIEND = "The fourth reference picture shows today's new friend; wherever they appear, draw them exactly like that. "
 PORTRAIT = LOOK + (
     "A portrait for a children's friend collection card: one new character, alone, centered, head and upper body, "
     "facing the viewer with a friendly smile, on a plain soft pastel background, square picture. Give it the same "
-    "proportions and clay feel as the six friends in the first reference picture, but as a new character, not one of "
+    "proportions and clay feel as the nine friends in the first reference picture, but as a new character, not one of "
     "them, and with the simpler handmade look described here. The second reference picture shows the clay world. "
 ) + NOT_AI
 
