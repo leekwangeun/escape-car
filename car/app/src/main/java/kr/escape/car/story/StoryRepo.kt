@@ -141,6 +141,18 @@ class StoryRepo(
         }
     }
 
+    /**
+     * A wish the app itself refused before asking the server (Wish.readable): shown to the parent like the server's
+     * refusal, with [reasons]. Anything being written for an earlier wish is dropped.
+     */
+    fun refuse(reasons: List<String>) {
+        job?.cancel()
+        writingFor = null
+        _preview.value = null
+        _rejection.value = reasons
+        _status.value = Status.REJECTED
+    }
+
     private class Found(val story: Story, val puzzles: List<Puzzle>, val fromShelf: Boolean = false)
 
     /**

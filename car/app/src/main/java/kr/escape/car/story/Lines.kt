@@ -40,6 +40,12 @@ object Lines {
     const val DRAWING = "잠깐만! 다음 장면을 그리고 있어."
 
     /**
+     * The story server refused the family's wish (any rule, any word): said once as the setup screen comes back, next to
+     * the parent's notice that tells why.
+     */
+    const val WISH_REJECTED = "다른 소원을 빌어 주세요."
+
+    /**
      * At the start of play: the climate's AUTO mode changes the fan, the air conditioner and the recirculation by
      * itself, which the app cannot read. Lumi says it in Korean letters so the speech engine does not spell it out.
      */

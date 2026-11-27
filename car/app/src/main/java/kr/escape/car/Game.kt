@@ -28,6 +28,7 @@ import kr.escape.car.story.StoryKeys
 import kr.escape.car.story.Scene
 import kr.escape.car.story.Story
 import kr.escape.car.story.StoryRepo
+import kr.escape.car.story.Wish
 import kr.escape.car.voice.Voice
 import kotlin.random.Random
 
@@ -169,6 +170,13 @@ class Game(
     fun begin() {
         val s = car.value
         val setup = _ui.value.setup
+        // a place that is no word at all (ㅎㅇ, !!, 123) is refused here and never sent: the setup screen stays, with
+        // the parent's notice and the friend asking for another wish, as for a wish the server refused
+        if (setup.wish.isNotBlank() && !Wish.readable(Wish.place(setup.wish))) {
+            stories?.refuse(listOf(Wish.UNREADABLE))
+            lumi.say(Lines.WISH_REJECTED)
+            return
+        }
         var ui = GameUi(
             phase = Phase.INTRO, setup = setup, puzzles = Planner.plan(setup, s, rnd, questions),
             snapshot = Snapshot.of(s), writing = stories != null,
@@ -195,7 +203,8 @@ class Game(
         }
         // the parent turns AUTO off while the story is written; the friend says hello once it is here
         lumi.say(Lines.AUTO_OFF)
-        lumi.prefetch(FriendIntro.ALL)
+        // a refused wish is told at once too
+        lumi.prefetch(FriendIntro.ALL + Lines.WISH_REJECTED)
         stories.prepare(setup, s, _ui.value.puzzles)
     }
 
@@ -216,7 +225,8 @@ class Game(
 
     /**
      * The story server's answer to the episode [begin] asked for: its story, the app's own lines when it could not
-     * write one, or back to the setup screen when it refused the family's wish (the reason is shown there).
+     * write one, or back to the setup screen when it refused the family's wish (the reason is shown there, and the
+     * friend asks for another wish). Each answer is taken once: after it the game is no longer writing.
      */
     fun storyDone(status: StoryRepo.Status) {
         val ui = _ui.value
@@ -227,6 +237,7 @@ class Game(
             StoryRepo.Status.REJECTED -> {
                 clearSave()
                 _ui.value = GameUi(setup = ui.setup)
+                lumi.say(Lines.WISH_REJECTED)
             }
             StoryRepo.Status.NONE, StoryRepo.Status.WRITING -> Unit
         }
