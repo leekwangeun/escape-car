@@ -29,6 +29,7 @@ import kr.escape.car.story.Story
 import kr.escape.car.story.StoryClient
 import kr.escape.car.story.StoryKeys
 import kr.escape.car.story.StoryRepo
+import kr.escape.car.story.Wish
 import kr.escape.car.story.WishRejected
 import kr.escape.car.voice.Voice
 import org.json.JSONObject
@@ -510,5 +511,114 @@ class GameTest {
         assertEquals(wish, g.ui.value.setup.wish)
         assertNull(store.read())
         assertEquals(listOf("무서운 말: 귀신"), repo.rejection.value)
+    }
+
+    @Test
+    fun theFriendAsksForAnotherWishOnceWhenItIsRefused() = runTest {
+        val (g, repo) = gameWith(Server { throw WishRejected(listOf("무서운 말: 귀신")) })
+        g.setup { it.copy(wish = "귀신의 집에서 펼쳐지는 탐정 놀이 이야기") }
+        g.begin()
+        // fetched while the story is written, so it plays at once
+        assertTrue(Lines.WISH_REJECTED in voice.prefetched)
+        advanceUntilIdle()
+        g.storyDone(repo.status.value)
+        assertEquals(Lines.WISH_REJECTED, voice.said.last())
+        // the screen telling the game the same answer again (it is shown again) is not a second refusal
+        g.storyDone(repo.status.value)
+        g.storyDone(StoryRepo.Status.REJECTED)
+        assertEquals(1, voice.said.count { it == Lines.WISH_REJECTED })
+    }
+
+    @Test
+    fun everyRefusalIsToldWhateverTheRule() = runTest {
+        // a word of any kind, several at once, or none named at all
+        for (reasons in listOf(listOf("무서운 말: 귀신"), listOf("다치는 말: 칼", "나쁜 말: 바보"), emptyList())) {
+            voice.said.clear()
+            val (g, repo) = gameWith(Server { throw WishRejected(reasons) })
+            g.setup { it.copy(wish = "어딘가에서 펼쳐지는 보물찾기 이야기") }
+            g.begin()
+            advanceUntilIdle()
+            g.storyDone(repo.status.value)
+            assertEquals(reasons.toString(), listOf(Lines.WISH_REJECTED), voice.said.filter { it == Lines.WISH_REJECTED })
+            assertEquals(Phase.SETUP, g.ui.value.phase)
+        }
+    }
+
+    @Test
+    fun aWishRefusedAgainAfterItWasChangedIsToldAgain() = runTest {
+        val (g, repo) = gameWith(Server { throw WishRejected(listOf("무서운 말: 귀신")) })
+        g.setup { it.copy(wish = "귀신의 집에서 펼쳐지는 탐정 놀이 이야기") }
+        g.begin()
+        advanceUntilIdle()
+        g.storyDone(repo.status.value)
+        // the parent writes another wish and it is refused too: a new refusal, told again
+        g.setup { it.copy(wish = "귀신 성에서 펼쳐지는 탐정 놀이 이야기") }
+        g.begin()
+        advanceUntilIdle()
+        g.storyDone(repo.status.value)
+        assertEquals(2, voice.said.count { it == Lines.WISH_REJECTED })
+    }
+
+    @Test
+    fun aPlaceThatIsNoWordIsRefusedInTheAppAndNeverSent() = runTest {
+        for (place in listOf("ㅎㅇ", "ㅋㅋ", "!!", "123", "ghd", "rkt", "dkssud")) {
+            voice.said.clear()
+            val server = Server { written }
+            val (g, repo) = gameWith(server)
+            g.setup { it.copy(wish = "${place}에서 펼쳐지는 보물찾기 이야기") }
+            g.begin()
+            advanceUntilIdle()
+            // never asked, the setup screen stays with the parent's notice, and the friend asks for another wish once
+            assertEquals(place, 0, server.asked.size)
+            assertEquals(place, Phase.SETUP, g.ui.value.phase)
+            assertEquals(place, StoryRepo.Status.REJECTED, repo.status.value)
+            assertEquals(place, listOf(Wish.UNREADABLE), repo.rejection.value)
+            assertEquals(place, listOf(Lines.WISH_REJECTED), voice.said)
+            assertNull(place, store.read())
+            // the screen passing the refusal on is not a second one
+            g.storyDone(repo.status.value)
+            assertEquals(place, 1, voice.said.count { it == Lines.WISH_REJECTED })
+        }
+    }
+
+    @Test
+    fun aOneSyllableOrEnglishPlaceIsAWishLikeAnyOther() = runTest {
+        for (place in listOf("용", "북극 얼음 마을", "공룡 섬2", "Paris", "dog", "Tokyo")) {
+            voice.said.clear()
+            val server = Server { written }
+            val (g, repo) = gameWith(server)
+            g.setup { it.copy(wish = "${place}에서 펼쳐지는 보물찾기 이야기") }
+            g.begin()
+            advanceUntilIdle()
+            assertEquals(place, 1, server.asked.size)
+            g.storyDone(repo.status.value)
+            assertEquals(place, written, g.ui.value.story)
+            assertFalse(place, Lines.WISH_REJECTED in voice.said)
+        }
+    }
+
+    @Test
+    fun aWishFixedAfterTheAppRefusedItGoesToTheServer() = runTest {
+        val server = Server { written }
+        val (g, repo) = gameWith(server)
+        g.setup { it.copy(wish = "ㅎㅇ에서 펼쳐지는 보물찾기 이야기") }
+        g.begin()
+        g.setup { it.copy(wish = "공룡 섬에서 펼쳐지는 보물찾기 이야기") }
+        g.begin()
+        // the refusal is cleared while the new wish is written
+        assertEquals(StoryRepo.Status.WRITING, repo.status.value)
+        assertTrue(repo.rejection.value.isEmpty())
+        advanceUntilIdle()
+        assertEquals(1, server.asked.size)
+    }
+
+    @Test
+    fun aStoryThatComesIsNeverToldAsRefused() = runTest {
+        val (g, repo) = gameWith(Server { written })
+        g.setup { it.copy(wish = "구름 위 놀이공원에서 펼쳐지는 보물찾기 이야기") }
+        g.begin()
+        advanceUntilIdle()
+        g.storyDone(repo.status.value)
+        assertFalse(Lines.WISH_REJECTED in voice.said)
     }
 }

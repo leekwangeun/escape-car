@@ -114,6 +114,7 @@ import kr.escape.car.story.Progress
 import kr.escape.car.story.Question
 import kr.escape.car.story.Story
 import kr.escape.car.story.StoryRepo
+import kr.escape.car.story.Wish
 import kr.escape.car.ui.AssetImage
 import kr.escape.car.ui.BodyText
 import kr.escape.car.ui.CheckLabel
@@ -623,7 +624,6 @@ private fun wishStep(waited: Int) = when {
 // kinds that suit any place the family types and need no character beyond the friend book, and carry any lesson
 private val STORY_KINDS = listOf("보물찾기", "구조대", "탐정 놀이", "수리하러 가기", "축제 준비", "발명 대회")
 private const val PLACE_MAX = 20
-private val WISH_FORM = Regex("^(.+)에서 펼쳐지는 (.+) 이야기$")
 
 private fun wishOf(place: String, kind: String) = "${place.trim()}에서 펼쳐지는 $kind 이야기"
 
@@ -671,7 +671,7 @@ internal fun toward(word: String): String {
 
 /** The place and the kind of story a wish was made from, so the box shows them again. */
 private fun wishParts(wish: String): Pair<String, String?> =
-    WISH_FORM.matchEntire(wish)?.let { it.groupValues[1] to it.groupValues[2].takeIf { k -> k in STORY_KINDS } } ?: ("" to null)
+    Wish.FORM.matchEntire(wish)?.let { it.groupValues[1] to it.groupValues[2].takeIf { k -> k in STORY_KINDS } } ?: ("" to null)
 
 /**
  * 4. 오늘의 이야기 소원: the family types a place (or lets the dice pick one) and picks a kind of story; 소원 빌기 below
