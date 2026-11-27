@@ -561,7 +561,7 @@ class GameTest {
 
     @Test
     fun aPlaceThatIsNoWordIsRefusedInTheAppAndNeverSent() = runTest {
-        for (place in listOf("ㅎㅇ", "ㅋㅋ", "!!", "123")) {
+        for (place in listOf("ㅎㅇ", "ㅋㅋ", "!!", "123", "ghd", "rkt", "dkssud")) {
             voice.said.clear()
             val server = Server { written }
             val (g, repo) = gameWith(server)
@@ -582,16 +582,19 @@ class GameTest {
     }
 
     @Test
-    fun aOneSyllablePlaceIsAWishLikeAnyOther() = runTest {
-        val server = Server { written }
-        val (g, repo) = gameWith(server)
-        g.setup { it.copy(wish = "용에서 펼쳐지는 보물찾기 이야기") }
-        g.begin()
-        advanceUntilIdle()
-        assertEquals(1, server.asked.size)
-        g.storyDone(repo.status.value)
-        assertEquals(written, g.ui.value.story)
-        assertFalse(Lines.WISH_REJECTED in voice.said)
+    fun aOneSyllableOrEnglishPlaceIsAWishLikeAnyOther() = runTest {
+        for (place in listOf("용", "북극 얼음 마을", "공룡 섬2", "Paris", "dog", "Tokyo")) {
+            voice.said.clear()
+            val server = Server { written }
+            val (g, repo) = gameWith(server)
+            g.setup { it.copy(wish = "${place}에서 펼쳐지는 보물찾기 이야기") }
+            g.begin()
+            advanceUntilIdle()
+            assertEquals(place, 1, server.asked.size)
+            g.storyDone(repo.status.value)
+            assertEquals(place, written, g.ui.value.story)
+            assertFalse(place, Lines.WISH_REJECTED in voice.said)
+        }
     }
 
     @Test
