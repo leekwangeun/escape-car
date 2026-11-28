@@ -1007,13 +1007,17 @@ private fun KidStage(
     val p = ui.puzzle
     val story = ui.story
     val theme = story?.picture("cover") ?: story?.themePicture ?: "theme_star_train"
+    // a story made ready for the episode's wish is shown only while the box still holds that wish: once the parent
+    // types or picks something else, the bubble follows the box at once
+    val typed = draft.kind?.takeIf { draft.place.isNotBlank() }?.let { wishOf(draft.place, it) }
+    val ready = preview?.takeIf { typed == ui.setup.wish }
     val (bubble, picture) = when (ui.phase) {
         Phase.SETUP -> when {
             // the episode to go on with, while the parent's card offers it
             // with no cover on the device the friend's own picture, never another friend's on the default cover
             resume != null -> (resume.story?.title ?: "하던 탐험을 이어 할까?") to
                 (resume.story?.picture("cover") ?: "home_${buddy.name.lowercase()}")
-            preview != null -> preview.title to (preview.picture("cover") ?: preview.themePicture)
+            ready != null -> ready.title to (ready.picture("cover") ?: ready.themePicture)
             // the friend picked waits in the explorer team's clubhouse
             // the wish box as it is being filled in, word by word
             draft.line != null -> draft.line!! to "home_${buddy.name.lowercase()}"
