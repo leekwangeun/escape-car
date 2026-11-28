@@ -170,8 +170,8 @@ def test_make_voice_follows_the_keys(monkeypatch):
     import app.voice as voice
 
     class Made:
-        def __init__(self, api_key=None, limited=True, listener=None, pace=None):
-            self.pace = pace
+        def __init__(self, model=None, api_key=None, limited=True, listener=None, pace=None):
+            self.model, self.pace = model, pace
             self.api_key, self.limited, self.listener = api_key, limited, listener
 
     monkeypatch.setattr(voice, "Listener", lambda api_key=None, paid_key=None: ("listener", api_key, paid_key))

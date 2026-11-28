@@ -29,7 +29,7 @@ from .painter import Painter, make_painter
 from .pictures import PENDING, Drawing
 from .service import make_episode, speak_line, tidy_line, timeless_request
 from .store import DailyLimit, IpLimit, ReportLimit, Store, prune_audio, prune_images
-from .voice import Voice, cache_key, make_voice
+from .voice import Gated, Voice, cache_key, make_spare_voice, make_voice
 from .writer import Writer, make_writer
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(name)s %(message)s")
@@ -74,13 +74,22 @@ def create_app(
     bank: Bank | None = None,
     voice: Voice | None = _UNSET,
     library: Library | None = _UNSET,
+    spare_voice: Voice | None = _UNSET,
 ) -> FastAPI:
     app = FastAPI(title="차량탈출 이야기 서버", docs_url=None, redoc_url=None)
     writer = writer or make_writer()
     painter = make_painter() if painter is _UNSET else painter
     # the questions made once and checked (tools/make_bank.py); a broken bank stops the server here
     bank = bank or load_bank()
-    voice = make_voice() if voice is _UNSET else voice
+    voice_from_env = voice is _UNSET
+    voice = make_voice() if voice_from_env else voice
+    if spare_voice is _UNSET:
+        spare_voice = make_spare_voice() if voice_from_env else None
+    if voice is not None and spare_voice is not None and not isinstance(voice, Gated):
+        # the main model (Flash) until its day is used up, then the spare one (Lite) until the main one opens again
+        voice = Gated(voice)
+    # the voices a line is read with, in order: the spare one only when the main one gave no sound
+    voices = [voice] + ([spare_voice] if spare_voice is not None else [])
     if library is _UNSET:
         # the environment decides: no STORY_LIBRARY_BUCKET or STORY_LIBRARY_DIR means no shelf
         library = make_library(lambda s, d, r: recheck(s, d, r, bank))
@@ -217,16 +226,21 @@ def create_app(
         # a bank hint recorded ahead of time (python -m app.hint_voice): no call, whatever the day's limit
         if (data := hints.get(req.text)) is not None:
             return Response(content=data, media_type="audio/wav")
-        key = cache_key(voice, tidy_line(req.text))
-        # a shelved story keeps its lines for good: no new recording, even long after the cache has dropped it
-        data = library.voice(key) if library is not None else None
-        if data is None:
-            data = speak_line(req.text, voice, audio_cache)
+        data = None
+        for v in voices:
+            # each model keeps its own recordings: once the main one opens again, a new line is read with it
+            key = cache_key(v, tidy_line(req.text))
+            # a shelved story keeps its lines for good: no new recording, even long after the cache has dropped it
+            data = library.voice(key) if library is not None else None
+            if data is None:
+                data = speak_line(req.text, v, audio_cache)
+            if data is not None:
+                if library is not None:
+                    library.keep_voice(req.text, key, data)
+                break
         if data is None:
             # no sound for this line: the app shows it as a caption
             raise HTTPException(status_code=503, detail="no_voice")
-        if library is not None:
-            library.keep_voice(req.text, key, data)
         prune_audio(audio_cache, audio_ttl_hours, audio_max_files)
         return Response(content=data, media_type="audio/wav")
 

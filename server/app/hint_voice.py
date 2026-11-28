@@ -20,9 +20,9 @@ import sys
 from pathlib import Path
 
 from .bank import Bank
-from .pacing import Pace, is_daily, is_quota
+from .pacing import is_daily, is_quota
 from .service import tidy_line
-from .voice import GeminiVoice, KeyedVoice, Listener, QuotaError, Voice, respelled
+from .voice import QuotaError, Voice, make_voice, respelled
 
 log = logging.getLogger("hint_voice")
 
@@ -106,18 +106,8 @@ def record(voice: Voice, store: HintVoices, lines: list[str], max_lines: int) ->
 
 
 def hint_voice(model: str = HINT_MODEL) -> Voice | None:
-    """Like voice.make_voice, on the Lite model: the free key first, then the paid key at TTS_PAID_RPM a minute."""
-    free_key = os.environ.get("GEMINI_API_KEY", "").strip()
-    paid_key = os.environ.get("GEMINI_API_KEY_PAID", "").strip()
-    listener = None
-    if os.environ.get("TTS_LISTEN", "").lower() != "off" and (free_key or paid_key):
-        listener = Listener(api_key=free_key or None, paid_key=paid_key or None)
-    free = GeminiVoice(model=model, api_key=free_key, listener=listener) if free_key else None
-    paid = GeminiVoice(model=model, api_key=paid_key, limited=False, listener=listener,
-                       pace=Pace(int(os.environ.get("TTS_PAID_RPM", "8")), "hint speech (paid key)")) if paid_key else None
-    if free is None and paid is None:
-        return None
-    return free if paid is None else KeyedVoice(free, paid)
+    """The server's voice on the Lite model: the free key first, then the paid key at TTS_PAID_RPM a minute."""
+    return make_voice(model)
 
 
 def folder() -> Path:

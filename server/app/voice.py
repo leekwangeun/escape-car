@@ -372,8 +372,61 @@ class KeyedVoice:
         return self.paid.speak(text)
 
 
-def make_voice() -> Voice | None:
-    """GEMINI_API_KEY (free) and GEMINI_API_KEY_PAID; TTS_MODEL=off, or neither key, means no voice."""
+SPARE_MODEL = "gemini-3.8-flash-lite-tts"
+# once the main model says its day is used up, it is asked again this long after (Google's day ends at midnight Pacific)
+GATE_RETRY_SECONDS = 1800.0
+
+
+def used_up_for_the_day(error: Exception) -> bool:
+    """A 429 naming a daily limit, or the free key's own daily guard (Quota)."""
+    text = str(error)
+    return "PerDay" in text or "per day" in text.lower() or "daily" in text.lower() or "TTS_DAILY_MAX" in text
+
+
+class Gated:
+    """[voice] until its daily limit is reached, then closed: no call goes out (QuotaError at once) until [retry]
+    seconds later, when one line tries it again. The server reads lines with the spare model meanwhile (main.speak)."""
+
+    def __init__(self, voice: Voice, retry: float = GATE_RETRY_SECONDS, clock=time.monotonic):
+        self.voice = voice
+        self.retry = retry
+        self._clock = clock
+        self._closed_until = 0.0
+        self._lock = threading.Lock()
+
+    @property
+    def identity(self) -> str:
+        return getattr(self.voice, "identity", type(self.voice).__name__)
+
+    @property
+    def closed(self) -> bool:
+        return self._clock() < self._closed_until
+
+    def speak(self, text: str) -> bytes:
+        if self.closed:
+            raise QuotaError("main voice used up for the day, spare voice instead")
+        try:
+            return self.voice.speak(text)
+        except Exception as e:
+            if used_up_for_the_day(e):
+                with self._lock:
+                    self._closed_until = self._clock() + self.retry
+                log.warning("voice: %s used up for the day (%s), spare voice for %.0f min",
+                            self.identity.split("|")[0], _why(e), self.retry / 60)
+            raise
+
+
+def make_spare_voice() -> Voice | None:
+    """The cheaper model read when the main one is used up for the day (TTS_SPARE_MODEL, off to have none)."""
+    model = os.environ.get("TTS_SPARE_MODEL", SPARE_MODEL).strip()
+    if not model or model.lower() == "off" or model == os.environ.get("TTS_MODEL", TTS_MODEL):
+        return None
+    return make_voice(model)
+
+
+def make_voice(model: str | None = None) -> Voice | None:
+    """GEMINI_API_KEY (free) and GEMINI_API_KEY_PAID; TTS_MODEL=off, or neither key, means no voice. [model] is the
+    TTS_MODEL one unless given (the spare voice and the hint recordings name theirs)."""
     if os.environ.get("TTS_MODEL", "").lower() == "off":
         return None
     free_key = os.environ.get("GEMINI_API_KEY", "").strip()
@@ -382,9 +435,11 @@ def make_voice() -> Voice | None:
     listener = None
     if os.environ.get("TTS_LISTEN", "").lower() != "off" and (free_key or paid_key):
         listener = Listener(api_key=free_key or None, paid_key=paid_key or None)
-    free = GeminiVoice(api_key=free_key, listener=listener) if free_key else None
-    paid = GeminiVoice(api_key=paid_key, limited=False, listener=listener,
-                       pace=Pace(int(os.environ.get("TTS_PAID_RPM", "8")), "speech (paid key)")) if paid_key else None
+    free = GeminiVoice(model=model, api_key=free_key, listener=listener) if free_key else None
+    # Google counts each model's minute apart, so every model gets its own Pace
+    paid = GeminiVoice(model=model, api_key=paid_key, limited=False, listener=listener,
+                       pace=Pace(int(os.environ.get("TTS_PAID_RPM", "8")),
+                                 f"speech (paid key{', ' + model if model else ''})")) if paid_key else None
     if free is None and paid is None:
         return None
     return free if paid is None else KeyedVoice(free, paid)
