@@ -326,14 +326,15 @@ class Game(
         )
         save()
         lumi.say(listOfNotNull(intro, _ui.value.scene(p).speech).joinToString(" "))
-        // a quiz swapped just now has new words for after the answer
-        lumi.prefetch(listOf(_ui.value.solvedLine))
+        // a quiz swapped just now has new words for after the answer; this puzzle's hint is fetched now too, so
+        // 힌트 plays at once (only this one: the other puzzles' hints are fetched when they start)
+        lumi.prefetch(listOf(_ui.value.solvedLine, _ui.value.scene(p).hint))
     }
 
     /**
      * What Lumi will say in [ui] from [from] onwards, exactly as she will say it: each puzzle's story and question,
-     * the line after the answer, the gentle wrong-answer lines, the last words and the pause line. Hints are left to
-     * when they are asked for, so a line nobody hears is never paid for.
+     * the line after the answer, the gentle wrong-answer lines, the last words and the pause line. Hints are left out:
+     * each puzzle's hint is fetched as that puzzle starts ([startPuzzle]), never the whole episode's at once.
      */
     private fun lines(ui: GameUi, from: Int = 0): List<String> = buildList {
         for (i in from until ui.puzzles.size) {
@@ -394,10 +395,11 @@ class Game(
         lumi.say(if (hearts == null) treasure else "$treasure ${Lines.CLOSER}")
     }
 
+    /** 힌트: said aside, so 다시 듣기 after it still repeats the puzzle, not the hint. */
     fun hint() {
         val p = _ui.value.puzzle ?: return
         _ui.update { it.copy(hintHeard = true) }
-        lumi.say(_ui.value.scene(p).hint)
+        lumi.aside(_ui.value.scene(p).hint)
     }
 
     /** 벨트 딸깍 미션: the parent saw the child buckle up (no car signal is read). */

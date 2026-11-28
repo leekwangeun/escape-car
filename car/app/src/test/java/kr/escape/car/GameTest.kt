@@ -35,6 +35,7 @@ import kr.escape.car.voice.Voice
 import org.json.JSONObject
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
+import org.junit.Assert.assertNotEquals
 import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
@@ -204,6 +205,37 @@ class GameTest {
         val before = voice.stops
         g.finish()
         assertEquals(before + 1, voice.stops)
+    }
+
+    // ------------------------------------------------------------ 힌트
+
+    @Test
+    fun againAfterTheHintRepeatsThePuzzleNotTheHint() {
+        val g = playing()
+        val puzzleLine = voice.said.last()
+        val hint = g.ui.value.scene(g.ui.value.puzzle!!).hint
+        g.hint()
+        assertEquals(hint, voice.said.last())
+        // 다시 듣기 (FakeVoice keeps the line to repeat as Lumi does: say() sets it, aside() does not)
+        voice.repeat()
+        assertEquals(puzzleLine, voice.said.last())
+        // a second hint and 다시 듣기 again: still the puzzle
+        g.hint()
+        voice.repeat()
+        assertEquals(puzzleLine, voice.said.last())
+    }
+
+    @Test
+    fun eachPuzzlesHintIsFetchedAsItStartsAndNoOther() {
+        val g = playing()
+        val quizHint = g.ui.value.scene(quiz).hint
+        val beltHint = g.ui.value.scene(Puzzle.BeltMission).hint
+        assertNotEquals(quizHint, beltHint)
+        // the puzzle being played: its hint is already fetched; the next puzzle's is not yet
+        assertTrue(quizHint in voice.prefetched)
+        assertFalse(beltHint in voice.prefetched)
+        g.startPuzzle(1)
+        assertTrue(beltHint in voice.prefetched)
     }
 
     // ------------------------------------------------------------ 20 minutes, and the time the car was off
