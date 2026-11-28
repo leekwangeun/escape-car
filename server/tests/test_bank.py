@@ -217,7 +217,7 @@ def test_the_shipped_bank_has_three_situations_per_function_and_age(shipped):
     situations = Counter((e.dial, e.answer, e.age) for e in shipped.entries if e.kind == "REASON")
     assert situations == {(dial, value, age): 3 for (dial, value) in quiz.REASON_ACTIONS for age in bank.AGES
                           if not (age == "LITTLE" and dial in quiz.REASON_NOT_LITTLE)}
-    assert sum(situations.values()) == 108
+    assert sum(situations.values()) == 99
 
 
 def test_the_youngest_get_no_cooling_situation_from_the_shipped_bank(shipped):
@@ -259,12 +259,12 @@ def test_write_and_read_round_trip(tmp_path):
     # by device, then kind, then age, then answer (off before on)
     assert [e.id for e in back] == [
         "fan-l-001", "fan-d-001", "fan-d-003", "fan-d-002", "temp_up-l-001", "temp-down-c-r02", "lights-l-001",
-        "ac-off-l-r02", "ac-on-l-r03", "defrost-l-r01",
+        "ac-off-l-r02", "ac-on-l-r03", "defrost-c-r02",
     ]
     raw = json.loads(path.read_text(encoding="utf-8"))
     assert raw["version"] == 2 and all("dial" in d for d in raw["questions"])
     situation = next(d for d in raw["questions"] if d["id"] == FOG.id)
-    assert situation == {"id": FOG.id, "kind": "REASON", "dial": "DEFROST", "age": "LITTLE", "text": FOG.text,
+    assert situation == {"id": FOG.id, "kind": "REASON", "dial": "DEFROST", "age": "CAPTAIN", "text": FOG.text,
                          "hint": FOG.hint, "answer": 1}
     assert next(d for d in raw["questions"] if d["id"] == COLD.id)["answer"] == 0
     assert "expr" not in next(d for d in raw["questions"] if d["id"] == WORD.id)
@@ -372,7 +372,7 @@ def test_the_cells_to_fill_add_up_to_the_whole_bank():
     # three situations per function and age, none for the youngest on the ones they are never told
     cells = sum(n for dial in bank.DIAL_ORDER for age in bank.AGES for (kind, _), n in targets(dial).items()
                 if kind == "REASON" and not (age == "LITTLE" and dial in quiz.REASON_NOT_LITTLE))
-    assert cells == 108
+    assert cells == 99
 
 
 def test_every_entry_falls_in_a_cell_of_its_device():

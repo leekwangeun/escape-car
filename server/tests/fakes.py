@@ -31,9 +31,10 @@ WORD = Entry(id="temp_up-l-001", kind="ENGLISH", dial="TEMP_UP", age="LITTLE", a
 RUN = Entry(id="lights-l-001", kind="PATTERN", dial="LIGHTS", age="LITTLE", answer=4, terms=(1, 2, 3),
             text="켜진 독서등이 모두 1개, 2개, 3개 다음 수가 되게 해 줘!", hint="수가 얼마씩 커지는지 봐.")
 # situations from the shipped bank (app/question_bank.json)
-FOG = Entry(id="defrost-l-r01", kind="REASON", dial="DEFROST", age="LITTLE", answer=1,
-            text="앞 유리 안쪽이 뿌예지려고 해, 와이퍼는 바깥만 닦아. 알맞은 차량 버튼을 찾아 나를 도와줘!",
-            hint="꼬불꼬불 화살표 버튼이 두 개면 둥그스름한 앞 유리 모양 쪽이야.")
+# (the 4~6 are not told a windscreen situation, quiz.REASON_NOT_LITTLE: this one is for the 7~9)
+FOG = Entry(id="defrost-c-r02", kind="REASON", dial="DEFROST", age="CAPTAIN", answer=1,
+            text="앞 유리 안쪽이 자꾸 뿌예지려고 해. 손으로 문지르면 얼룩이 남으니까 알맞은 차량 버튼을 찾아 나를 도와줘!",
+            hint="닦는 대신 버튼 그림을 봐, 꼬불꼬불 화살표 버튼이 두 개면 둥그스름한 앞 유리 모양 쪽이야.")
 # an air conditioner situation is written for turning it on (1) or off (0) and only serves that answer
 COOL = Entry(id="ac-on-l-r03", kind="REASON", dial="AC", age="LITTLE", answer=1,
              text="땀방울이 그림 종이에 똑 떨어졌어, 바람은 나오는데 안 시원해. 창문은 닫아 둔 채로 알맞은 차량 버튼을 찾아 나를 도와줘!",

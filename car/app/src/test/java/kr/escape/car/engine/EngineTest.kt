@@ -435,13 +435,21 @@ class EngineTest {
             assertFalse(Planner.fits(cooler, warm, s))
             // the other situations are fine, and so is a number question on the temperature
             assertTrue(Planner.fits(reason(Dial.AC, 1), known, s))
-            assertTrue(Planner.fits(reason(Dial.TEMP_UP), known, s))
             assertTrue(Planner.fits(Puzzle.Quiz(QuizKind.MATH, Dial.TEMP_DOWN, 2), warm, s))
         }
+        // nor the ones a second thought settles: warming the air, the windscreen, every reading light off
+        for (q in listOf(reason(Dial.TEMP_UP), reason(Dial.DEFROST), reason(Dial.LIGHTS_OFF, 0))) {
+            assertFalse(q.toString(), Planner.allowed(q, Age.LITTLE))
+            assertTrue(q.toString(), Planner.allowed(q, Age.CAPTAIN))
+        }
+        for (q in listOf(reason(Dial.FAN_DOWN), reason(Dial.SEAT_HEAT_OFF, 0), reason(Dial.LIGHT_CHILD))) {
+            assertTrue(q.toString(), Planner.allowed(q, Age.LITTLE))
+        }
+        val never = listOf(Dial.RECIRC, Dial.TEMP_DOWN, Dial.TEMP_UP, Dial.DEFROST, Dial.LIGHTS_OFF)
         val car = warm.copy(devices = setOf(Device.RECIRCULATION, Device.TEMPERATURE, Device.AC))
         repeat(100) { seed ->
             for (q in Planner.plan(little.copy(minutes = 15), car, Random(seed)).filterIsInstance<Puzzle.Quiz>()) {
-                assertFalse(q.toString(), q.kind == QuizKind.REASON && q.dial in listOf(Dial.RECIRC, Dial.TEMP_DOWN))
+                assertFalse(q.toString(), q.kind == QuizKind.REASON && q.dial in never)
             }
         }
     }

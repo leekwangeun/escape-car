@@ -254,6 +254,8 @@ object Lines {
             "scene_together" -> "scene_together_ok"
             "scene_ac_on", "scene_ac_off" -> "scene_ac_ok"
             "scene_recirc_on", "scene_recirc_off" -> "scene_recirc_ok"
+            // every reading light off: the friend resting is the trouble, so the solved picture is the cosy room
+            "scene_dust_ok" -> "scene_rooms_ok"
             else -> "scene_dust_ok"
         }
         Puzzle.BeltMission -> "scene_belt_ok"
@@ -394,13 +396,18 @@ object Lines {
 
     /** The stage picture with the scene's friend in it, by the device the puzzle is about. */
     private fun picture(p: Puzzle.Quiz): String = when (p.dial) {
-        Dial.FAN, Dial.FAN_UP, Dial.FAN_DOWN -> "scene_wind_face"
+        Dial.FAN, Dial.FAN_UP -> "scene_wind_face"
+        // turning something down or off never shows the picture of a friend who needs more of it: too much wind
+        // swirling, a friend sweating, a friend who wants to rest
+        Dial.FAN_DOWN -> "scene_recirc_off"
         Dial.TEMP_UP, Dial.TEMP_DOWN -> "scene_rooms_left"
-        Dial.LIGHTS, Dial.LIGHT_CHILD, Dial.LIGHTS_OFF -> "scene_together"
+        Dial.LIGHTS, Dial.LIGHT_CHILD -> "scene_together"
+        Dial.LIGHTS_OFF -> "scene_dust_ok"
         Dial.AC -> if (p.value == 1) "scene_ac_on" else "scene_ac_off"
         Dial.RECIRC -> if (p.value == 1) "scene_recirc_on" else "scene_recirc_off"
         Dial.DEFROST -> "scene_fog"
-        Dial.SEAT_HEAT, Dial.SEAT_HEAT_ON, Dial.SEAT_HEAT_OFF -> "scene_dust_in"
+        Dial.SEAT_HEAT, Dial.SEAT_HEAT_ON -> "scene_dust_in"
+        Dial.SEAT_HEAT_OFF -> "scene_ac_on"
     }
 
     private fun button(d: Dial): String = when (d) {

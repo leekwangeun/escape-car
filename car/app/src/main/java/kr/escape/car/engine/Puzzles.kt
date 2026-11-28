@@ -184,9 +184,11 @@ object Planner {
 
     /**
      * Situations the youngest (4~6) are never told: they do not know the recirculation button, and hear "에어컨" in a
-     * cooling story as the answer (server quiz.REASON_NOT_LITTLE).
+     * cooling story as the answer. Warming the air (they reach for the seat), the inside of the windscreen, and every
+     * reading light off at once take a second thought: they get only situations one clue settles (server
+     * quiz.REASON_NOT_LITTLE).
      */
-    private val NOT_LITTLE = setOf(Dial.RECIRC, Dial.TEMP_DOWN)
+    private val NOT_LITTLE = setOf(Dial.RECIRC, Dial.TEMP_DOWN, Dial.TEMP_UP, Dial.DEFROST, Dial.LIGHTS_OFF)
 
     /** The youngest (4~6) know the English number words up to five (one..five), as the question bank does. */
     const val LITTLE_ENGLISH_MAX = 5

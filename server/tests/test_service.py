@@ -58,6 +58,10 @@ def test_an_age_the_bank_has_nothing_for_gets_a_younger_ages_question(key, ages)
 @pytest.mark.parametrize("age", AGES)
 def test_a_situation_key_gets_the_situation_written_for_its_function_and_way(key, e, age):
     q = quiz.parse(key)
+    if age == "LITTLE" and q.dial in quiz.REASON_NOT_LITTLE:
+        # never told to the youngest: the bank has none for them and no younger age to fall back on
+        assert key not in pick_questions(request([[key]], [age]), BANK, random.Random(0))
+        return
     for seed in range(10):
         dq, hint = pick_questions(request([[key]], [age]), BANK, random.Random(seed))[key]
         assert (dq.kind, dq.text, hint) == ("REASON", e.text, e.hint)

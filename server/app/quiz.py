@@ -103,8 +103,10 @@ REASON_WHEN = {
     ("LIGHTS_OFF", 0): "독서등이 하나라도 켜져 있을 때",
 }
 
-# the youngest (4~6) do not know the recirculation button, and hear "에어컨" in a cooling story as the answer
-REASON_NOT_LITTLE = ("RECIRC", "TEMP_DOWN")
+# the youngest (4~6) do not know the recirculation button, and hear "에어컨" in a cooling story as the answer. Warming
+# the air (they reach for the seat), the inside of the windscreen, and every reading light off at once take a second
+# thought they do not have yet: they are told only situations one clue settles
+REASON_NOT_LITTLE = ("RECIRC", "TEMP_DOWN", "TEMP_UP", "DEFROST", "LIGHTS_OFF")
 
 # a situation never says the name of its own button; another button's name may only stand in a clue that rules it
 # out ("에어컨은 켜져 있는데도")
