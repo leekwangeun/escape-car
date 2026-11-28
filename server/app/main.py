@@ -21,6 +21,7 @@ from fastapi import FastAPI, HTTPException, Request, Response
 from fastapi.responses import FileResponse
 
 from .bank import Bank, load as load_bank
+from .hint_voice import HintVoices
 from .checker import speak_problems, wish_problems
 from .library import Library, make_library, recheck
 from .models import Episode, EpisodeRequest, LibraryAnswer, LibraryRequest, Report, Shelf, SpeakRequest
@@ -93,6 +94,8 @@ def create_app(
     audio_cache = folder / "audio_cache"
     audio_ttl_hours = float(os.environ.get("STORY_AUDIO_TTL_HOURS", "72"))
     audio_max_files = int(os.environ.get("STORY_AUDIO_MAX_FILES", "2000"))
+    # the bank's hints, recorded once and kept for good (app.hint_voice)
+    hints = HintVoices(folder / "hint_voice")
     if library is not None:
         # a line read before its story was shelved is copied to the shelf from here
         library.recording = lambda key: _read(audio_cache / f"{key}.wav")
@@ -211,6 +214,9 @@ def create_app(
         ip = client_ip(request, trust_proxy)
         if not speak_limit.take(req.installId, ip):
             raise HTTPException(status_code=429, detail="daily_limit")
+        # a bank hint recorded ahead of time (python -m app.hint_voice): no call, whatever the day's limit
+        if (data := hints.get(req.text)) is not None:
+            return Response(content=data, media_type="audio/wav")
         key = cache_key(voice, tidy_line(req.text))
         # a shelved story keeps its lines for good: no new recording, even long after the cache has dropped it
         data = library.voice(key) if library is not None else None
