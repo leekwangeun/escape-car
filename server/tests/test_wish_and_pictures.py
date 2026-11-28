@@ -56,6 +56,10 @@ def test_a_scary_or_personal_wish_is_refused_before_any_model(tmp_path):
     assert wish_problems("우리 집 주소 알려 줘")
     assert wish_problems("귀\u200b신 놀이")
     assert not wish_problems("T-rex 공룡 섬에서 보물찾기")  # English words are fine in a wish
+    # self-harm, written plainly or broken up
+    for bad_wish in ("자살", "자 살 놀이", "자.살", "자해하는 친구", "극단적인 선택", "목매기", "투신"):
+        assert wish_problems(bad_wish), bad_wish
+    assert not wish_problems("모자 사러 가기") and not wish_problems("모자 살래") and not wish_problems("잣나무 숲 구조대")
 
 
 def test_the_wish_reaches_the_writer_and_too_long_is_refused(tmp_path):

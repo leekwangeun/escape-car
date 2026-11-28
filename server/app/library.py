@@ -541,6 +541,9 @@ def recheck(shelved: Shelved, draft: Draft, request: EpisodeRequest, bank: Bank)
     answer, a question the bank no longer holds, and season or time words. The request's context is never read."""
     verdict = checker.check(draft, request)
     problems = list(verdict.whole) + [p for ps in verdict.items.values() for p in ps]
+    # a wish the server would refuse today: the story stays in storage but is never offered
+    if request.wish:
+        problems += [f"소원: {p}" for p in checker.wish_problems(request.wish)]
     for scene in draft.scenes:
         problems += result_problems(scene, request)
     for key, scene in shelved.episode.scenes.items():

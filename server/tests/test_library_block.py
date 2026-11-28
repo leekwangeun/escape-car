@@ -132,3 +132,10 @@ def test_a_hint_that_is_not_the_banks_leaves_the_story_out(tmp_path):
     s.episode.scenes[key].hint = "다른 힌트를 쓰는 이야기."
     d, r = request_for(s)
     assert any("문제" in p for p in recheck(s, d, r, BANK))
+
+
+def test_a_story_whose_wish_is_refused_today_leaves_the_story_out(tmp_path):
+    s = story()
+    d, r = request_for(s)
+    assert recheck(s, d, r.model_copy(update={"wish": "북극 얼음 마을"}), BANK) == []
+    assert any(p.startswith("소원: 자해나 자살") for p in recheck(s, d, r.model_copy(update={"wish": "자살"}), BANK))

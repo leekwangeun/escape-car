@@ -62,6 +62,19 @@ patterns = [
   '혼날',
 ]
 
+# self-harm: never a story, whatever a wish asks
+[[forbid]]
+label = "자해나 자살"
+patterns = [
+  '자살',
+  '(?<![가-힣])자\s+살(?![가-힣])',
+  '자해',
+  '극단\s*적\s*인?\s*선택',
+  '목\s*매',
+  '투신',
+  '목숨을?\s*끊',
+]
+
 # would have the family do something unsafe with the car
 [[forbid]]
 label = "차 안전"
